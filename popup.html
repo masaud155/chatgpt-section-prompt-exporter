@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Section Image Prompt Extractor</title>
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="container">
+    <h1>Section Image Prompt Extractor</h1>
+    <label for="blogTitle">Blog title / topic</label>
+    <input id="blogTitle" type="text" placeholder="Enter blog title or topic" />
+    <button id="findPrompts">Find Prompts</button>
+    <div class="status-row">
+      <span id="promptCount">Total prompts: 0</span>
+      <span id="statusMessage"></span>
+    </div>
+    <div id="resultsContainer">
+      <div class="results-header">
+        <h2>Extracted Prompts</h2>
+        <button id="clearResults" class="secondary">Clear</button>
+      </div>
+      <pre id="results" class="results">No prompts extracted yet.</pre>
+    </div>
+    <div class="button-row">
+      <button id="copyPrompts" class="primary">Copy All Prompts</button>
+      <button id="exportTxt">Export as TXT</button>
+      <button id="exportJson">Export as JSON</button>
+      <button id="exportCsv">Export as CSV</button>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>
