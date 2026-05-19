@@ -1,0 +1,60 @@
+Prompt Harvest — Feature Summary
+
+Overview:
+A Chrome extension to extract section image prompts from ChatGPT conversations, generate a scheduled image-generation plan, and export a clean Medium-ready blog article.
+
+Main UI (popup):
+- Tabbed layout with four independent tabs:
+  1. Extract Prompts
+     - Manual blog title input with Detect Titles button.
+     - Extract only section image prompts for the selected blog.
+     - Dedupe prompts.
+     - Preview results in a scrollable box.
+     - Copy to clipboard, Export as TXT/JSON/CSV.
+  2. Schedule Plan
+     - Manual blog title input with Detect Titles button.
+     - Start time, optional end time, gap minutes input.
+     - Generates scheduled tasks for each section image prompt (one image per task).
+     - Preview plan, copy to clipboard, export TXT.
+  3. Clean Blog Export
+     - Manual blog title input with Detect Titles button.
+     - Extracts blog content starting at the selected title only.
+     - Removes image-prompt blocks and prompt/instruction text.
+     - Returns a Medium-ready article (title, headings, paragraphs, CTA).
+     - Copy to clipboard, export TXT / Markdown.
+  4. Settings
+     - Default gap minutes for Schedule Plan.
+     - Default export format.
+     - Auto-detect titles on open toggle.
+
+Smart Title Behavior:
+- Single manual input per tab for blog title (typing + Detect button + Clear button).
+- `Detect Titles` asks the content script to scan the ChatGPT conversation for likely blog titles.
+- If detection yields exactly one title, it auto-fills the input; otherwise user types the title.
+- Selected/typed title is synced across tabs.
+
+Content Script (`content.js`) message API:
+- `detectBlogTitles` => returns `titles: []` (array of candidate titles).
+- `extractPrompts` (payload: `blogTitle`) => returns `{ prompts: [...], foundTitle: true/false }`.
+- `extractCleanBlog` (payload: `blogTitle`) => returns `{ text: "cleaned blog text", foundTitle: true/false }`.
+- `getChatText` => returns the built conversation text.
+
+Extraction behavior and rules:
+- Extraction begins at the exact selected blog title line in the conversation.
+- Clean blog extraction stops at the next blog boundary or clear marker.
+- All `[Section Image]` blocks, `Section Image Prompt ...`, `Prompt:`, `Generate ...`, and related instruction/notes are removed from clean export results.
+- Prompts are deduplicated using normalized whitespace and lowercase key.
+
+Files changed / relevant files:
+- `popup.html` — new tabbed UI and inputs.
+- `popup.css` — tab and card styles, input/copy/export UI, cleaned suggestion styles removed.
+- `popup.js` — shared helper functions, feature handlers, smart title sync, exports, clipboard, downloads.
+- `content.js` — conversation scraping, title detection, prompt extraction, clean blog extraction.
+- `manifest.json` — (no recent required changes noted in summary).
+
+Notes & Next steps:
+- Reload the extension in Chrome after installing updates.
+- If you want visual autocomplete suggestions re-enabled, I can re-add a lightweight suggestion UI.
+- I can also add a small "preview boundaries" indicator for clean export to show start/end lines.
+
+Generated: May 19, 2026

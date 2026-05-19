@@ -33,21 +33,16 @@
         </div>
 
         <div class="field-row">
-          <div class="field">
-            <label for="extractBlogTitle">Blog title / topic</label>
-            <input id="extractBlogTitle" type="text" placeholder="Enter blog title or topic" />
+          <div class="field smart-title-field">
+            <label for="extractBlogTitle">Blog title</label>
+            <div class="smart-title-input-wrapper">
+              <input id="extractBlogTitle" class="smart-title-input" type="text" placeholder="Type or enter a blog title..." autocomplete="off" />
+              <button type="button" class="clear-title-button" data-target="extractBlogTitle">✕</button>
+            </div>
+            <p class="help-text">Type the title or use the detect button to auto-fill a single detected title.</p>
           </div>
           <div class="action-group">
-            <button id="extractDetectTitles" class="secondary">Detect titles</button>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="extractBlogDropdown">Detected titles</label>
-            <select id="extractBlogDropdown">
-              <option value="">Select a detected title</option>
-            </select>
+            <button id="extractDetectTitles" class="secondary">Refresh titles</button>
           </div>
         </div>
 
@@ -81,21 +76,16 @@
         </div>
 
         <div class="field-row">
-          <div class="field">
-            <label for="scheduleBlogTitle">Blog title / topic</label>
-            <input id="scheduleBlogTitle" type="text" placeholder="Enter blog title or topic" />
+          <div class="field smart-title-field">
+            <label for="scheduleBlogTitle">Blog title</label>
+            <div class="smart-title-input-wrapper">
+              <input id="scheduleBlogTitle" class="smart-title-input" type="text" placeholder="Type or enter a blog title..." autocomplete="off" />
+              <button type="button" class="clear-title-button" data-target="scheduleBlogTitle">✕</button>
+            </div>
+            <p class="help-text">Type the title or use the detect button to auto-fill a single detected title.</p>
           </div>
           <div class="action-group">
-            <button id="scheduleDetectTitles" class="secondary">Detect titles</button>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="scheduleBlogDropdown">Detected titles</label>
-            <select id="scheduleBlogDropdown">
-              <option value="">Select a detected title</option>
-            </select>
+            <button id="scheduleDetectTitles" class="secondary">Refresh titles</button>
           </div>
         </div>
 
@@ -142,21 +132,16 @@
         </div>
 
         <div class="field-row">
-          <div class="field">
-            <label for="cleanBlogTitle">Blog title / topic</label>
-            <input id="cleanBlogTitle" type="text" placeholder="Enter blog title or topic" />
+          <div class="field smart-title-field">
+            <label for="cleanBlogTitle">Blog title</label>
+            <div class="smart-title-input-wrapper">
+              <input id="cleanBlogTitle" class="smart-title-input" type="text" placeholder="Type or enter a blog title..." autocomplete="off" />
+              <button type="button" class="clear-title-button" data-target="cleanBlogTitle">✕</button>
+            </div>
+            <p class="help-text">Type the title or use the detect button to auto-fill a single detected title.</p>
           </div>
           <div class="action-group">
-            <button id="cleanDetectTitles" class="secondary">Detect titles</button>
-          </div>
-        </div>
-
-        <div class="field-row">
-          <div class="field">
-            <label for="cleanBlogDropdown">Detected titles</label>
-            <select id="cleanBlogDropdown">
-              <option value="">Select a detected title</option>
-            </select>
+            <button id="cleanDetectTitles" class="secondary">Refresh titles</button>
           </div>
         </div>
 

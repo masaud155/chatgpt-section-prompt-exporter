@@ -3,7 +3,6 @@ const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
 
 const extractBlogTitleInput = document.getElementById("extractBlogTitle");
 const extractDetectTitlesButton = document.getElementById("extractDetectTitles");
-const extractBlogDropdown = document.getElementById("extractBlogDropdown");
 const extractPromptsBtn = document.getElementById("extractPromptsBtn");
 const extractTotalPrompts = document.getElementById("extractTotalPrompts");
 const extractStatus = document.getElementById("extractStatus");
@@ -15,7 +14,6 @@ const exportExtractCsvButton = document.getElementById("exportExtractCsv");
 
 const scheduleBlogTitleInput = document.getElementById("scheduleBlogTitle");
 const scheduleDetectTitlesButton = document.getElementById("scheduleDetectTitles");
-const scheduleBlogDropdown = document.getElementById("scheduleBlogDropdown");
 const scheduleStartTimeInput = document.getElementById("scheduleStartTime");
 const scheduleEndTimeInput = document.getElementById("scheduleEndTime");
 const scheduleGapMinutesInput = document.getElementById("scheduleGapMinutes");
@@ -28,7 +26,6 @@ const exportScheduleTxtButton = document.getElementById("exportScheduleTxt");
 
 const cleanBlogTitleInput = document.getElementById("cleanBlogTitle");
 const cleanDetectTitlesButton = document.getElementById("cleanDetectTitles");
-const cleanBlogDropdown = document.getElementById("cleanBlogDropdown");
 const extractCleanBlogBtn = document.getElementById("extractCleanBlogBtn");
 const cleanStatus = document.getElementById("cleanStatus");
 const cleanPreview = document.getElementById("cleanPreview");
@@ -165,47 +162,58 @@ function sendMessageToContentScript(message) {
   });
 }
 
-function getSelectedTitle(inputElement, dropdownElement) {
-  const selected = dropdownElement.value;
-  if (selected) {
-    inputElement.value = selected;
-    return selected.trim();
-  }
+let detectedBlogTitles = [];
+
+function getSelectedTitle(inputElement) {
   return inputElement.value.trim();
 }
 
-function populateTitleDropdown(dropdown, titles) {
-  dropdown.innerHTML = "";
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = titles.length ? "Select a detected title" : "No titles detected";
-  dropdown.appendChild(placeholder);
-  titles.forEach((title) => {
-    const option = document.createElement("option");
-    option.value = title;
-    option.textContent = title;
-    dropdown.appendChild(option);
+function setSharedBlogTitle(title) {
+  [extractBlogTitleInput, scheduleBlogTitleInput, cleanBlogTitleInput].forEach((input) => {
+    input.value = title;
   });
 }
 
-async function detectBlogTitles(dropdown, statusElement) {
-  setStatus(statusElement, "Detecting titles...");
+function syncBlogTitleAcrossTabs(value) {
+  setSharedBlogTitle(value);
+}
+
+function setDetectedBlogTitles(titles) {
+  detectedBlogTitles = titles || [];
+  if (detectedBlogTitles.length === 1) {
+    setSharedBlogTitle(detectedBlogTitles[0]);
+  }
+}
+
+function populateTitleDropdown(dropdown, titles) {
+  // Deprecated, kept for backward compatibility if needed.
+}
+
+async function detectBlogTitles(statusElement) {
+  if (statusElement) {
+    setStatus(statusElement, "Detecting titles...");
+  }
   try {
     const response = await sendMessageToContentScript({ action: "detectBlogTitles" });
     if (!response || !Array.isArray(response.titles)) {
       throw new Error("Invalid response from title detection.");
     }
+    setDetectedBlogTitles(response.titles);
     if (response.titles.length === 0) {
-      populateTitleDropdown(dropdown, []);
-      setStatus(statusElement, "No titles detected.", true);
+      if (statusElement) {
+        setStatus(statusElement, "No titles detected.", true);
+      }
       return [];
     }
-    populateTitleDropdown(dropdown, response.titles);
-    setStatus(statusElement, `Detected ${response.titles.length} title${response.titles.length === 1 ? "" : "s"}.`);
+    if (statusElement) {
+      setStatus(statusElement, `Detected ${response.titles.length} title${response.titles.length === 1 ? "" : "s"}.`);
+    }
     return response.titles;
   } catch (error) {
-    setStatus(statusElement, error.message || "Unable to detect titles.", true);
-    populateTitleDropdown(dropdown, []);
+    if (statusElement) {
+      setStatus(statusElement, error.message || "Unable to detect titles.", true);
+    }
+    setDetectedBlogTitles([]);
     return [];
   }
 }
@@ -262,7 +270,7 @@ function buildScheduleText(prompts, startTime, gap, endTime) {
 }
 
 async function handleExtractPrompts() {
-  const blogTitle = getSelectedTitle(extractBlogTitleInput, extractBlogDropdown);
+  const blogTitle = getSelectedTitle(extractBlogTitleInput);
   setStatus(extractStatus, "Extracting prompts...");
   extractPreview.textContent = "";
   extractTotalPrompts.textContent = "Total prompts: 0";
@@ -290,7 +298,7 @@ async function handleExtractPrompts() {
 }
 
 async function handleGenerateSchedule() {
-  const blogTitle = getSelectedTitle(scheduleBlogTitleInput, scheduleBlogDropdown);
+  const blogTitle = getSelectedTitle(scheduleBlogTitleInput);
   const startTime = parseTimeToMinutes(scheduleStartTimeInput.value);
   const endTime = parseTimeToMinutes(scheduleEndTimeInput.value);
   const gap = parseInt(scheduleGapMinutesInput.value, 10);
@@ -345,7 +353,13 @@ async function handleGenerateSchedule() {
 }
 
 async function handleExtractCleanBlog() {
-  const blogTitle = getSelectedTitle(cleanBlogTitleInput, cleanBlogDropdown);
+  const blogTitle = getSelectedTitle(cleanBlogTitleInput);
+  if (!blogTitle) {
+    setStatus(cleanStatus, "Please select or enter a blog title first so the extension can export the correct blog.", true);
+    cleanPreview.textContent = "No clean blog extracted yet.";
+    return;
+  }
+
   setStatus(cleanStatus, "Extracting clean blog...");
   cleanPreview.textContent = "";
 
@@ -432,17 +446,27 @@ function saveSettings() {
 }
 
 function autoDetectOnLoad() {
-  if (!settingsAutoDetect.checked) return;
-  const activeTab = tabPanels.find((panel) => panel.classList.contains("active"));
-  if (!activeTab) return;
-  const tabId = activeTab.id;
-  if (tabId === "extractTab") {
-    detectBlogTitles(extractBlogDropdown, extractStatus);
-  } else if (tabId === "scheduleTab") {
-    detectBlogTitles(scheduleBlogDropdown, scheduleStatus);
-  } else if (tabId === "cleanTab") {
-    detectBlogTitles(cleanBlogDropdown, cleanStatus);
-  }
+  detectBlogTitles();
+}
+
+function setupSmartTitleInputs() {
+  const inputs = [extractBlogTitleInput, scheduleBlogTitleInput, cleanBlogTitleInput];
+
+  inputs.forEach((input) => {
+    input.addEventListener("input", () => {
+      syncBlogTitleAcrossTabs(input.value.trim());
+    });
+  });
+
+  document.querySelectorAll(".clear-title-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      const targetId = button.dataset.target;
+      const targetInput = document.getElementById(targetId);
+      if (targetInput) {
+        syncBlogTitleAcrossTabs("");
+      }
+    });
+  });
 }
 
 function setupEventHandlers() {
@@ -451,11 +475,7 @@ function setupEventHandlers() {
   });
 
   extractDetectTitlesButton.addEventListener("click", () => {
-    detectBlogTitles(extractBlogDropdown, extractStatus);
-  });
-
-  extractBlogDropdown.addEventListener("change", () => {
-    extractBlogTitleInput.value = extractBlogDropdown.value;
+    detectBlogTitles(extractStatus);
   });
 
   extractPromptsBtn.addEventListener("click", handleExtractPrompts);
@@ -495,11 +515,7 @@ function setupEventHandlers() {
   });
 
   scheduleDetectTitlesButton.addEventListener("click", () => {
-    detectBlogTitles(scheduleBlogDropdown, scheduleStatus);
-  });
-
-  scheduleBlogDropdown.addEventListener("change", () => {
-    scheduleBlogTitleInput.value = scheduleBlogDropdown.value;
+    detectBlogTitles(scheduleStatus);
   });
 
   generateScheduleBtn.addEventListener("click", handleGenerateSchedule);
@@ -514,11 +530,7 @@ function setupEventHandlers() {
   });
 
   cleanDetectTitlesButton.addEventListener("click", () => {
-    detectBlogTitles(cleanBlogDropdown, cleanStatus);
-  });
-
-  cleanBlogDropdown.addEventListener("change", () => {
-    cleanBlogTitleInput.value = cleanBlogDropdown.value;
+    detectBlogTitles(cleanStatus);
   });
 
   extractCleanBlogBtn.addEventListener("click", handleExtractCleanBlog);
@@ -545,6 +557,7 @@ function setupEventHandlers() {
 
 function init() {
   setupEventHandlers();
+  setupSmartTitleInputs();
   loadSettings();
   autoDetectOnLoad();
 }

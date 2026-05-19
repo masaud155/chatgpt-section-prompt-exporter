@@ -130,6 +130,27 @@ button {
   background: white;
 }
 
+.smart-title-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.smart-title-input-wrapper input {
+  border-radius: 12px;
+}
+
+.clear-title-button {
+  width: 42px;
+  min-width: 42px;
+  padding: 0 10px;
+  font-size: 14px;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  background: #f8fafc;
+}
+
 input:focus,
 select:focus,
 button:focus {
