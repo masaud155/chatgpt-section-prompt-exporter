@@ -23,6 +23,44 @@
       </div>
       <pre id="results" class="results">No prompts extracted yet.</pre>
     </div>
+    
+    <div id="scheduleContainer">
+      <div class="results-header">
+        <h2>Schedule Plan Generator</h2>
+        <button id="clearSchedule" class="secondary">Clear Schedule</button>
+      </div>
+
+      <div class="schedule-grid">
+        <div>
+          <label for="startTime">Start time</label>
+          <input id="startTime" type="time" />
+        </div>
+        <div>
+          <label for="endTime">End time (optional)</label>
+          <input id="endTime" type="time" />
+        </div>
+        <div>
+          <label for="gapMinutes">Gap minutes</label>
+          <input id="gapMinutes" type="number" min="1" value="3" />
+        </div>
+        <div class="generate-col">
+          <label>&nbsp;</label>
+          <button id="generateSchedule" class="primary">Generate Schedule Plan</button>
+        </div>
+      </div>
+
+      <div class="schedule-controls">
+        <span id="scheduleCount">Total scheduled tasks: 0</span>
+        <span id="scheduleStatus" class="small-status"></span>
+      </div>
+
+      <pre id="schedulePreview" class="results">No schedule generated yet.</pre>
+
+      <div class="button-row">
+        <button id="copySchedule" class="primary">Copy Schedule Plan</button>
+        <button id="exportScheduleTxt">Export Schedule as TXT</button>
+      </div>
+    </div>
     <div class="button-row">
       <button id="copyPrompts" class="primary">Copy All Prompts</button>
       <button id="exportTxt">Export as TXT</button>

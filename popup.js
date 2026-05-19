@@ -8,6 +8,16 @@ const exportTxtButton = document.getElementById("exportTxt");
 const exportJsonButton = document.getElementById("exportJson");
 const exportCsvButton = document.getElementById("exportCsv");
 const clearResultsButton = document.getElementById("clearResults");
+const startTimeInput = document.getElementById("startTime");
+const endTimeInput = document.getElementById("endTime");
+const gapMinutesInput = document.getElementById("gapMinutes");
+const generateScheduleButton = document.getElementById("generateSchedule");
+const schedulePreview = document.getElementById("schedulePreview");
+const scheduleCount = document.getElementById("scheduleCount");
+const copyScheduleButton = document.getElementById("copySchedule");
+const exportScheduleTxtButton = document.getElementById("exportScheduleTxt");
+const clearScheduleButton = document.getElementById("clearSchedule");
+const scheduleStatus = document.getElementById("scheduleStatus");
 
 let extractedPrompts = [];
 let activeBlogTitle = "";
@@ -95,6 +105,90 @@ function toCsvContent() {
     lines.push(`${index + 1},${prompt}`);
   });
   return lines.join("\n");
+}
+
+function parseTimeToMinutes(timeStr) {
+  if (!timeStr) return null;
+  const parts = timeStr.split(":");
+  if (parts.length < 2) return null;
+  const hours = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  return hours * 60 + minutes;
+}
+
+function formatMinutesTo12Hour(mins) {
+  const m = ((mins % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const hours = Math.floor(m / 60);
+  const minutes = m % 60;
+  const ampm = hours >= 12 ? "PM" : "AM";
+  const displayHour = ((hours + 11) % 12) + 1;
+  const mm = minutes.toString().padStart(2, "0");
+  return `${displayHour}:${mm} ${ampm}`;
+}
+
+function generateSchedulePlan() {
+  scheduleStatus.textContent = "";
+  if (!extractedPrompts || extractedPrompts.length === 0) {
+    setStatus("No extracted prompts to schedule.", true);
+    return null;
+  }
+
+  const startTime = parseTimeToMinutes(startTimeInput.value);
+  const endTime = parseTimeToMinutes(endTimeInput.value);
+  const gap = parseInt(gapMinutesInput.value, 10) || 0;
+
+  if (startTime === null || isNaN(startTime)) {
+    setStatus("Please provide a valid start time.", true);
+    return null;
+  }
+  if (gap <= 0 || isNaN(gap)) {
+    setStatus("Please provide a valid gap in minutes (>=1).", true);
+    return null;
+  }
+
+  const lines = [];
+  let current = startTime;
+
+  let scheduledCount = 0;
+
+  for (let i = 0; i < extractedPrompts.length; i += 1) {
+    const taskIndex = i + 1;
+    if (endTime !== null && current > endTime) {
+      scheduleStatus.textContent = "Your selected time range is not enough for all prompts. Increase the end time or reduce the gap.";
+      scheduleStatus.style.color = "#dc2626";
+      break;
+    }
+
+    const timeLabel = formatMinutesTo12Hour(current);
+    const promptText = extractedPrompts[i].prompt;
+
+    lines.push(`Scheduled Task ${taskIndex}:`);
+    lines.push(`Time: ${timeLabel}`);
+    lines.push(`Instruction:`);
+    if (taskIndex === 1) {
+      lines.push(`Generate Image ${taskIndex} only using the prompt below. Generate one image only, then stop.`);
+    } else {
+      lines.push(`Generate Image ${taskIndex} only using the prompt below. Keep the same premium Medium blog style, but make it visually different from Image 1. Generate one image only, then stop.`);
+    }
+    lines.push("");
+    lines.push("Prompt:");
+    lines.push(promptText);
+    lines.push("");
+
+    scheduledCount += 1;
+    current += gap;
+  }
+
+  const result = lines.join("\n");
+  schedulePreview.textContent = result || "No schedule generated.";
+  scheduleCount.textContent = `Total scheduled tasks: ${scheduledCount}`;
+  if (scheduledCount > 0 && scheduledCount === extractedPrompts.length) {
+    scheduleStatus.textContent = "Schedule generated.";
+    scheduleStatus.style.color = "#2563eb";
+  } else if (scheduledCount > 0) {
+    setStatus("Schedule generated partially. Check the time range.", true);
+  }
+  return result;
 }
 
 function downloadFile(filename, content, type) {
@@ -237,6 +331,32 @@ exportCsvButton.addEventListener("click", () => {
   downloadFile("section-image-prompts.csv", toCsvContent(), "text/csv;charset=utf-8");
 });
 clearResultsButton.addEventListener("click", clearResults);
-
 clearResults();
-loadDetectedTopics();
+
+generateScheduleButton.addEventListener("click", () => {
+  generateSchedulePlan();
+});
+
+copyScheduleButton.addEventListener("click", () => {
+  const text = schedulePreview.textContent || "";
+  if (!text) {
+    setStatus("No schedule to copy.", true);
+    return;
+  }
+  copyToClipboard(text);
+});
+
+exportScheduleTxtButton.addEventListener("click", () => {
+  const text = schedulePreview.textContent || "";
+  if (!text) {
+    setStatus("No schedule to export.", true);
+    return;
+  }
+  downloadFile("schedule-plan.txt", text, "text/plain;charset=utf-8");
+});
+
+clearScheduleButton.addEventListener("click", () => {
+  schedulePreview.textContent = "No schedule generated yet.";
+  scheduleCount.textContent = "Total scheduled tasks: 0";
+  scheduleStatus.textContent = "";
+});
