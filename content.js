@@ -291,23 +291,70 @@ function cleanBlogText(text, startIndex) {
   return cleaned.join("\n").trim();
 }
 
+function getSelectedBlogText(fullText, title) {
+  const normalizedFull = normalizeText(fullText);
+  const startIndex = findBlogTitleIndex(normalizedFull, title);
+  if (title && title.trim() && startIndex === -1) {
+    return { text: "", foundTitle: false };
+  }
+
+  // Determine next detected blog title positions
+  const detectedTitles = extractBlogTitles(normalizedFull);
+  const titlePositions = detectedTitles
+    .map((t) => ({ title: t, idx: findBlogTitleIndex(normalizedFull, t) }))
+    .filter((p) => p.idx !== -1)
+    .sort((a, b) => a.idx - b.idx);
+
+  let nextTitlePos = -1;
+  for (const p of titlePositions) {
+    if (p.idx > startIndex) {
+      nextTitlePos = p.idx;
+      break;
+    }
+  }
+
+  // Also consider message boundaries: stop at the start of the next chat message
+  const messageEls = findChatMessages();
+  const messageTextsRaw = messageEls.map((el) => el.innerText.trim()).filter(Boolean);
+  const messageTexts = Array.from(new Set(messageTextsRaw));
+  let cumulative = 0;
+  let nextMessagePos = -1;
+  for (let i = 0; i < messageTexts.length; i++) {
+    const t = messageTexts[i];
+    const len = t.length;
+    if (cumulative <= startIndex && startIndex < cumulative + len) {
+      if (i + 1 < messageTexts.length) {
+        nextMessagePos = cumulative + len + 2; // account for the "\n\n" joiner used in buildConversationText
+      }
+      break;
+    }
+    // advance cumulative by length + separator
+    cumulative += len + 2;
+  }
+
+  const candidates = [normalizedFull.length];
+  if (nextTitlePos !== -1) candidates.push(nextTitlePos);
+  if (nextMessagePos !== -1) candidates.push(nextMessagePos);
+
+  const endIndex = Math.min(...candidates);
+
+  const selectedText = normalizedFull.slice(startIndex, endIndex).trim();
+  return { text: selectedText, foundTitle: true };
+}
+
 function getPromptsForBlog(title) {
   const pageText = buildConversationText();
-  const startIndex = findBlogTitleIndex(pageText, title);
-  if (title && title.trim() && startIndex === -1) {
-    return { prompts: [], foundTitle: false };
-  }
-  const extracted = extractPrompts(pageText, startIndex);
+  const selected = getSelectedBlogText(pageText, title);
+  if (!selected.foundTitle) return { prompts: [], foundTitle: false };
+  const extracted = extractPrompts(selected.text, 0);
   return { prompts: extracted, foundTitle: true };
 }
 
 function getCleanBlogForTitle(title) {
   const pageText = buildConversationText();
-  const startIndex = findBlogTitleIndex(pageText, title);
-  if (title && title.trim() && startIndex === -1) {
-    return { text: "", foundTitle: false };
-  }
-  return { text: cleanBlogText(pageText, startIndex), foundTitle: true };
+  const selected = getSelectedBlogText(pageText, title);
+  if (!selected.foundTitle) return { text: "", foundTitle: false };
+  return { text: cleanBlogText(selected.text, 0), foundTitle: true };
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
