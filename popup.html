@@ -3,71 +3,227 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Section Image Prompt Extractor</title>
+  <title>Prompt Harvest</title>
   <link rel="stylesheet" href="popup.css" />
 </head>
 <body>
   <div class="container">
-    <h1>Section Image Prompt Extractor</h1>
-    <label for="blogTitle">Blog title / topic</label>
-    <input id="blogTitle" type="text" placeholder="Enter blog title or topic" />
-    <button id="findPrompts">Find Prompts</button>
-    <div class="status-row">
-      <span id="promptCount">Total prompts: 0</span>
-      <span id="statusMessage"></span>
-    </div>
-    <div id="resultsContainer">
-      <div class="results-header">
-        <h2>Extracted Prompts</h2>
-        <button id="clearResults" class="secondary">Clear</button>
+    <header class="header">
+      <div>
+        <p class="eyebrow">Prompt Harvest</p>
+        <h1>Section Image Workflow</h1>
+        <p class="subtitle">Extract prompts, build a schedule plan, or export clean blog copy.</p>
       </div>
-      <pre id="results" class="results">No prompts extracted yet.</pre>
-    </div>
-    
-    <div id="scheduleContainer">
-      <div class="results-header">
-        <h2>Schedule Plan Generator</h2>
-        <button id="clearSchedule" class="secondary">Clear Schedule</button>
-      </div>
+    </header>
 
-      <div class="schedule-grid">
-        <div>
-          <label for="startTime">Start time</label>
-          <input id="startTime" type="time" />
-        </div>
-        <div>
-          <label for="endTime">End time (optional)</label>
-          <input id="endTime" type="time" />
-        </div>
-        <div>
-          <label for="gapMinutes">Gap minutes</label>
-          <input id="gapMinutes" type="number" min="1" value="3" />
-        </div>
-        <div class="generate-col">
-          <label>&nbsp;</label>
-          <button id="generateSchedule" class="primary">Generate Schedule Plan</button>
-        </div>
-      </div>
-
-      <div class="schedule-controls">
-        <span id="scheduleCount">Total scheduled tasks: 0</span>
-        <span id="scheduleStatus" class="small-status"></span>
-      </div>
-
-      <pre id="schedulePreview" class="results">No schedule generated yet.</pre>
-
-      <div class="button-row">
-        <button id="copySchedule" class="primary">Copy Schedule Plan</button>
-        <button id="exportScheduleTxt">Export Schedule as TXT</button>
-      </div>
+    <div class="tabs" role="tablist">
+      <button class="tab-button active" data-tab="extractTab">Extract Prompts</button>
+      <button class="tab-button" data-tab="scheduleTab">Schedule Plan</button>
+      <button class="tab-button" data-tab="cleanTab">Clean Blog Export</button>
+      <button class="tab-button" data-tab="settingsTab">Settings</button>
     </div>
-    <div class="button-row">
-      <button id="copyPrompts" class="primary">Copy All Prompts</button>
-      <button id="exportTxt">Export as TXT</button>
-      <button id="exportJson">Export as JSON</button>
-      <button id="exportCsv">Export as CSV</button>
-    </div>
+
+    <section class="tab-panel active" id="extractTab">
+      <div class="card">
+        <div class="section-header">
+          <div>
+            <h2>Extract Prompts</h2>
+            <p class="section-text">Extract only section image prompts for the selected blog.</p>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="extractBlogTitle">Blog title / topic</label>
+            <input id="extractBlogTitle" type="text" placeholder="Enter blog title or topic" />
+          </div>
+          <div class="action-group">
+            <button id="extractDetectTitles" class="secondary">Detect titles</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="extractBlogDropdown">Detected titles</label>
+            <select id="extractBlogDropdown">
+              <option value="">Select a detected title</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <button id="extractPromptsBtn" class="primary wide">Extract Prompts</button>
+        </div>
+
+        <div class="info-row">
+          <span id="extractTotalPrompts">Total prompts: 0</span>
+          <span id="extractStatus" class="small-status"></span>
+        </div>
+
+        <pre id="extractPreview" class="result-box">No prompts extracted yet.</pre>
+
+        <div class="button-row">
+          <button id="copyExtractedPrompts" class="primary">Copy Prompts</button>
+          <button id="exportExtractTxt">Export TXT</button>
+          <button id="exportExtractJson">Export JSON</button>
+          <button id="exportExtractCsv">Export CSV</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="scheduleTab">
+      <div class="card">
+        <div class="section-header">
+          <div>
+            <h2>Schedule Plan</h2>
+            <p class="section-text">Generate a ready-to-copy scheduled task plan from section image prompts.</p>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="scheduleBlogTitle">Blog title / topic</label>
+            <input id="scheduleBlogTitle" type="text" placeholder="Enter blog title or topic" />
+          </div>
+          <div class="action-group">
+            <button id="scheduleDetectTitles" class="secondary">Detect titles</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="scheduleBlogDropdown">Detected titles</label>
+            <select id="scheduleBlogDropdown">
+              <option value="">Select a detected title</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row split-grid">
+          <div class="field">
+            <label for="scheduleStartTime">Start time</label>
+            <input id="scheduleStartTime" type="time" />
+          </div>
+          <div class="field">
+            <label for="scheduleEndTime">End time (optional)</label>
+            <input id="scheduleEndTime" type="time" />
+          </div>
+          <div class="field">
+            <label for="scheduleGapMinutes">Gap minutes</label>
+            <input id="scheduleGapMinutes" type="number" min="1" value="3" />
+          </div>
+        </div>
+
+        <div class="field-row">
+          <button id="generateScheduleBtn" class="primary wide">Generate Schedule Plan</button>
+        </div>
+
+        <div class="info-row">
+          <span id="scheduleTotalTasks">Total scheduled tasks: 0</span>
+          <span id="scheduleStatus" class="small-status"></span>
+        </div>
+
+        <pre id="schedulePreview" class="result-box">No schedule generated yet.</pre>
+
+        <div class="button-row">
+          <button id="copySchedulePlan" class="primary">Copy Schedule Plan</button>
+          <button id="exportScheduleTxt">Export Schedule TXT</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="cleanTab">
+      <div class="card">
+        <div class="section-header">
+          <div>
+            <h2>Clean Blog Export</h2>
+            <p class="section-text">Export the blog article without section image prompts or image-generation details.</p>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="cleanBlogTitle">Blog title / topic</label>
+            <input id="cleanBlogTitle" type="text" placeholder="Enter blog title or topic" />
+          </div>
+          <div class="action-group">
+            <button id="cleanDetectTitles" class="secondary">Detect titles</button>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="cleanBlogDropdown">Detected titles</label>
+            <select id="cleanBlogDropdown">
+              <option value="">Select a detected title</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <button id="extractCleanBlogBtn" class="primary wide">Extract Clean Blog</button>
+        </div>
+
+        <div class="info-row">
+          <span id="cleanStatus" class="small-status"></span>
+        </div>
+
+        <pre id="cleanPreview" class="result-box">No clean blog extracted yet.</pre>
+
+        <div class="button-row">
+          <button id="copyCleanBlog" class="primary">Copy Medium-Ready Blog</button>
+          <button id="exportCleanTxt">Export TXT</button>
+          <button id="exportCleanMd">Export Markdown</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="settingsTab">
+      <div class="card">
+        <div class="section-header">
+          <div>
+            <h2>Settings</h2>
+            <p class="section-text">Configure defaults and workflow preferences for future use.</p>
+          </div>
+        </div>
+
+        <div class="field-row split-grid">
+          <div class="field">
+            <label for="settingsDefaultGap">Default gap minutes</label>
+            <input id="settingsDefaultGap" type="number" min="1" value="3" />
+            <p class="help-text">Used in the Schedule Plan tab.</p>
+          </div>
+          <div class="field">
+            <label for="settingsExportFormat">Default export format</label>
+            <select id="settingsExportFormat">
+              <option value="txt">TXT</option>
+              <option value="json">JSON</option>
+              <option value="csv">CSV</option>
+              <option value="md">Markdown</option>
+            </select>
+            <p class="help-text">Choose the default format for exports.</p>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field full-width">
+            <label for="settingsAutoDetect">Auto-detect titles on open</label>
+            <input id="settingsAutoDetect" type="checkbox" />
+            <p class="help-text">Automatically populate detected titles in the active tab.</p>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <button id="saveSettingsBtn" class="primary wide">Save Settings</button>
+        </div>
+
+        <div class="info-row">
+          <span id="settingsStatus" class="small-status"></span>
+        </div>
+      </div>
+    </section>
   </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

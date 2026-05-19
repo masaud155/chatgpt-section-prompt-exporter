@@ -1,110 +1,61 @@
-const blogTitleInput = document.getElementById("blogTitle");
-const findPromptsButton = document.getElementById("findPrompts");
-const promptCount = document.getElementById("promptCount");
-const statusMessage = document.getElementById("statusMessage");
-const results = document.getElementById("results");
-const copyPromptsButton = document.getElementById("copyPrompts");
-const exportTxtButton = document.getElementById("exportTxt");
-const exportJsonButton = document.getElementById("exportJson");
-const exportCsvButton = document.getElementById("exportCsv");
-const clearResultsButton = document.getElementById("clearResults");
-const startTimeInput = document.getElementById("startTime");
-const endTimeInput = document.getElementById("endTime");
-const gapMinutesInput = document.getElementById("gapMinutes");
-const generateScheduleButton = document.getElementById("generateSchedule");
-const schedulePreview = document.getElementById("schedulePreview");
-const scheduleCount = document.getElementById("scheduleCount");
-const copyScheduleButton = document.getElementById("copySchedule");
-const exportScheduleTxtButton = document.getElementById("exportScheduleTxt");
-const clearScheduleButton = document.getElementById("clearSchedule");
+const tabButtons = Array.from(document.querySelectorAll(".tab-button"));
+const tabPanels = Array.from(document.querySelectorAll(".tab-panel"));
+
+const extractBlogTitleInput = document.getElementById("extractBlogTitle");
+const extractDetectTitlesButton = document.getElementById("extractDetectTitles");
+const extractBlogDropdown = document.getElementById("extractBlogDropdown");
+const extractPromptsBtn = document.getElementById("extractPromptsBtn");
+const extractTotalPrompts = document.getElementById("extractTotalPrompts");
+const extractStatus = document.getElementById("extractStatus");
+const extractPreview = document.getElementById("extractPreview");
+const copyExtractedPromptsButton = document.getElementById("copyExtractedPrompts");
+const exportExtractTxtButton = document.getElementById("exportExtractTxt");
+const exportExtractJsonButton = document.getElementById("exportExtractJson");
+const exportExtractCsvButton = document.getElementById("exportExtractCsv");
+
+const scheduleBlogTitleInput = document.getElementById("scheduleBlogTitle");
+const scheduleDetectTitlesButton = document.getElementById("scheduleDetectTitles");
+const scheduleBlogDropdown = document.getElementById("scheduleBlogDropdown");
+const scheduleStartTimeInput = document.getElementById("scheduleStartTime");
+const scheduleEndTimeInput = document.getElementById("scheduleEndTime");
+const scheduleGapMinutesInput = document.getElementById("scheduleGapMinutes");
+const generateScheduleBtn = document.getElementById("generateScheduleBtn");
+const scheduleTotalTasks = document.getElementById("scheduleTotalTasks");
 const scheduleStatus = document.getElementById("scheduleStatus");
+const schedulePreview = document.getElementById("schedulePreview");
+const copySchedulePlanButton = document.getElementById("copySchedulePlan");
+const exportScheduleTxtButton = document.getElementById("exportScheduleTxt");
 
-let extractedPrompts = [];
-let activeBlogTitle = "";
+const cleanBlogTitleInput = document.getElementById("cleanBlogTitle");
+const cleanDetectTitlesButton = document.getElementById("cleanDetectTitles");
+const cleanBlogDropdown = document.getElementById("cleanBlogDropdown");
+const extractCleanBlogBtn = document.getElementById("extractCleanBlogBtn");
+const cleanStatus = document.getElementById("cleanStatus");
+const cleanPreview = document.getElementById("cleanPreview");
+const copyCleanBlogButton = document.getElementById("copyCleanBlog");
+const exportCleanTxtButton = document.getElementById("exportCleanTxt");
+const exportCleanMdButton = document.getElementById("exportCleanMd");
 
-function normalizePromptKey(text) {
-  return text.replace(/\s+/g, " ").trim().toLowerCase();
-}
+const settingsDefaultGap = document.getElementById("settingsDefaultGap");
+const settingsExportFormat = document.getElementById("settingsExportFormat");
+const settingsAutoDetect = document.getElementById("settingsAutoDetect");
+const saveSettingsButton = document.getElementById("saveSettingsBtn");
+const settingsStatus = document.getElementById("settingsStatus");
 
-function dedupePromptEntries(prompts) {
-  const seen = new Set();
-  return prompts.filter((entry) => {
-    const key = normalizePromptKey(entry.prompt);
-    if (seen.has(key)) {
-      return false;
-    }
-    seen.add(key);
-    return true;
+const STORAGE_KEY = "promptHarvestSettings";
+
+function activateTab(tabId) {
+  tabButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.tab === tabId);
+  });
+  tabPanels.forEach((panel) => {
+    panel.classList.toggle("active", panel.id === tabId);
   });
 }
 
-function updateUI() {
-  promptCount.textContent = `Total prompts: ${extractedPrompts.length}`;
-
-  if (extractedPrompts.length === 0) {
-    results.textContent = "No prompts extracted yet.";
-    return;
-  }
-
-  const formatted = extractedPrompts
-    .map((entry, index) => `Section Image Prompt ${index + 1}:\n${entry.prompt}`)
-    .join("\n\n");
-  results.textContent = formatted;
-}
-
-function setStatus(message, isError = false) {
-  statusMessage.textContent = message;
-  statusMessage.style.color = isError ? "#dc2626" : "#2563eb";
-}
-
-function clearResults() {
-  extractedPrompts = [];
-  activeBlogTitle = "";
-  results.textContent = "No prompts extracted yet.";
-  promptCount.textContent = "Total prompts: 0";
-  setStatus("");
-}
-
-function toTxtContent() {
-  const lines = [];
-  if (activeBlogTitle) {
-    lines.push(`Blog Title: ${activeBlogTitle}`);
-    lines.push("");
-  }
-
-  extractedPrompts.forEach((entry, index) => {
-    lines.push(`Section Image Prompt ${index + 1}:`);
-    lines.push(entry.prompt);
-    if (index < extractedPrompts.length - 1) {
-      lines.push("");
-    }
-  });
-
-  return lines.join("\n");
-}
-
-function toJsonContent() {
-  return JSON.stringify(
-    {
-      blogTitle: activeBlogTitle || "",
-      totalPrompts: extractedPrompts.length,
-      prompts: extractedPrompts.map((entry, index) => ({
-        sectionNumber: index + 1,
-        prompt: entry.prompt
-      }))
-    },
-    null,
-    2
-  );
-}
-
-function toCsvContent() {
-  const lines = ["Section Number,Prompt"];
-  extractedPrompts.forEach((entry, index) => {
-    const prompt = `"${entry.prompt.replace(/"/g, '""')}"`;
-    lines.push(`${index + 1},${prompt}`);
-  });
-  return lines.join("\n");
+function setStatus(element, message, isError = false) {
+  element.textContent = message;
+  element.style.color = isError ? "#dc2626" : "#2563eb";
 }
 
 function parseTimeToMinutes(timeStr) {
@@ -117,7 +68,7 @@ function parseTimeToMinutes(timeStr) {
 }
 
 function formatMinutesTo12Hour(mins) {
-  const m = ((mins % (24 * 60)) + (24 * 60)) % (24 * 60);
+  const m = ((mins % (24 * 60)) + 24 * 60) % (24 * 60);
   const hours = Math.floor(m / 60);
   const minutes = m % 60;
   const ampm = hours >= 12 ? "PM" : "AM";
@@ -126,69 +77,20 @@ function formatMinutesTo12Hour(mins) {
   return `${displayHour}:${mm} ${ampm}`;
 }
 
-function generateSchedulePlan() {
-  scheduleStatus.textContent = "";
-  if (!extractedPrompts || extractedPrompts.length === 0) {
-    setStatus("No extracted prompts to schedule.", true);
-    return null;
-  }
+function normalizePromptKey(text) {
+  return text.replace(/\s+/g, " ").trim().toLowerCase();
+}
 
-  const startTime = parseTimeToMinutes(startTimeInput.value);
-  const endTime = parseTimeToMinutes(endTimeInput.value);
-  const gap = parseInt(gapMinutesInput.value, 10) || 0;
-
-  if (startTime === null || isNaN(startTime)) {
-    setStatus("Please provide a valid start time.", true);
-    return null;
-  }
-  if (gap <= 0 || isNaN(gap)) {
-    setStatus("Please provide a valid gap in minutes (>=1).", true);
-    return null;
-  }
-
-  const lines = [];
-  let current = startTime;
-
-  let scheduledCount = 0;
-
-  for (let i = 0; i < extractedPrompts.length; i += 1) {
-    const taskIndex = i + 1;
-    if (endTime !== null && current > endTime) {
-      scheduleStatus.textContent = "Your selected time range is not enough for all prompts. Increase the end time or reduce the gap.";
-      scheduleStatus.style.color = "#dc2626";
-      break;
+function removeDuplicatePrompts(prompts) {
+  const seen = new Set();
+  return prompts.filter((entry) => {
+    const key = normalizePromptKey(entry.prompt);
+    if (seen.has(key)) {
+      return false;
     }
-
-    const timeLabel = formatMinutesTo12Hour(current);
-    const promptText = extractedPrompts[i].prompt;
-
-    lines.push(`Scheduled Task ${taskIndex}:`);
-    lines.push(`Time: ${timeLabel}`);
-    lines.push(`Instruction:`);
-    if (taskIndex === 1) {
-      lines.push(`Generate Image ${taskIndex} only using the prompt below. Generate one image only, then stop.`);
-    } else {
-      lines.push(`Generate Image ${taskIndex} only using the prompt below. Keep the same premium Medium blog style, but make it visually different from Image 1. Generate one image only, then stop.`);
-    }
-    lines.push("");
-    lines.push("Prompt:");
-    lines.push(promptText);
-    lines.push("");
-
-    scheduledCount += 1;
-    current += gap;
-  }
-
-  const result = lines.join("\n");
-  schedulePreview.textContent = result || "No schedule generated.";
-  scheduleCount.textContent = `Total scheduled tasks: ${scheduledCount}`;
-  if (scheduledCount > 0 && scheduledCount === extractedPrompts.length) {
-    scheduleStatus.textContent = "Schedule generated.";
-    scheduleStatus.style.color = "#2563eb";
-  } else if (scheduledCount > 0) {
-    setStatus("Schedule generated partially. Check the time range.", true);
-  }
-  return result;
+    seen.add(key);
+    return true;
+  });
 }
 
 function downloadFile(filename, content, type) {
@@ -201,15 +103,14 @@ function downloadFile(filename, content, type) {
   URL.revokeObjectURL(url);
 }
 
-function copyToClipboard(text) {
+function copyToClipboard(text, statusElement) {
   if (!navigator.clipboard) {
-    setStatus("Clipboard API not supported.", true);
+    setStatus(statusElement, "Clipboard API not supported.", true);
     return;
   }
-
   navigator.clipboard.writeText(text).then(
-    () => setStatus("All section image prompts copied successfully."),
-    () => setStatus("Unable to copy prompts to clipboard.", true)
+    () => setStatus(statusElement, "Copied successfully."),
+    () => setStatus(statusElement, "Unable to copy to clipboard.", true)
   );
 }
 
@@ -218,7 +119,6 @@ function injectContentScript(tabId) {
     if (!chrome.scripting) {
       return reject(new Error("The scripting API is unavailable."));
     }
-
     chrome.scripting.executeScript(
       { target: { tabId }, files: ["content.js"] },
       () => {
@@ -238,7 +138,6 @@ function sendMessageToContentScript(message) {
       if (!activeTab || !activeTab.id) {
         return reject(new Error("No active tab found."));
       }
-
       const trySend = () => {
         chrome.tabs.sendMessage(activeTab.id, message, (response) => {
           if (chrome.runtime.lastError) {
@@ -261,102 +160,393 @@ function sendMessageToContentScript(message) {
           resolve(response);
         });
       };
-
       trySend();
     });
   });
 }
 
-// No automatic topic detection: user will type blog title manually.
+function getSelectedTitle(inputElement, dropdownElement) {
+  const selected = dropdownElement.value;
+  if (selected) {
+    inputElement.value = selected;
+    return selected.trim();
+  }
+  return inputElement.value.trim();
+}
 
-async function handleFindPrompts() {
-  setStatus("Searching conversation...");
-  extractedPrompts = [];
-  updateUI();
+function populateTitleDropdown(dropdown, titles) {
+  dropdown.innerHTML = "";
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = titles.length ? "Select a detected title" : "No titles detected";
+  dropdown.appendChild(placeholder);
+  titles.forEach((title) => {
+    const option = document.createElement("option");
+    option.value = title;
+    option.textContent = title;
+    dropdown.appendChild(option);
+  });
+}
 
-  const title = blogTitleInput.value.trim();
-  activeBlogTitle = title;
-
+async function detectBlogTitles(dropdown, statusElement) {
+  setStatus(statusElement, "Detecting titles...");
   try {
-    const response = await sendMessageToContentScript({ action: "extractPrompts", blogTitle: title });
-    if (!response) {
-      setStatus("No response from the content script.", true);
-      return;
+    const response = await sendMessageToContentScript({ action: "detectBlogTitles" });
+    if (!response || !Array.isArray(response.titles)) {
+      throw new Error("Invalid response from title detection.");
     }
-
-    if (title && !response.foundTitle) {
-      setStatus("Blog title not found in the conversation.", true);
-      return;
+    if (response.titles.length === 0) {
+      populateTitleDropdown(dropdown, []);
+      setStatus(statusElement, "No titles detected.", true);
+      return [];
     }
-
-    extractedPrompts = dedupePromptEntries(response.prompts || []);
-    if (extractedPrompts.length === 0) {
-      setStatus(title ? "No section image prompts found for this blog." : "No section image prompts found.", true);
-    } else {
-      setStatus(`Found ${extractedPrompts.length} prompt${extractedPrompts.length === 1 ? "" : "s"}.`);
-    }
-    updateUI();
+    populateTitleDropdown(dropdown, response.titles);
+    setStatus(statusElement, `Detected ${response.titles.length} title${response.titles.length === 1 ? "" : "s"}.`);
+    return response.titles;
   } catch (error) {
-    setStatus(error.message || "Unable to extract prompts.", true);
+    setStatus(statusElement, error.message || "Unable to detect titles.", true);
+    populateTitleDropdown(dropdown, []);
+    return [];
   }
 }
 
-findPromptsButton.addEventListener("click", handleFindPrompts);
-copyPromptsButton.addEventListener("click", () => {
-  if (!extractedPrompts.length) {
-    setStatus("No prompts to copy.", true);
-    return;
-  }
-  copyToClipboard(toTxtContent());
-});
-exportTxtButton.addEventListener("click", () => {
-  if (!extractedPrompts.length) {
-    setStatus("No prompts to export.", true);
-    return;
-  }
-  downloadFile("section-image-prompts.txt", toTxtContent(), "text/plain;charset=utf-8");
-});
-exportJsonButton.addEventListener("click", () => {
-  if (!extractedPrompts.length) {
-    setStatus("No prompts to export.", true);
-    return;
-  }
-  downloadFile("section-image-prompts.json", toJsonContent(), "application/json;charset=utf-8");
-});
-exportCsvButton.addEventListener("click", () => {
-  if (!extractedPrompts.length) {
-    setStatus("No prompts to export.", true);
-    return;
-  }
-  downloadFile("section-image-prompts.csv", toCsvContent(), "text/csv;charset=utf-8");
-});
-clearResultsButton.addEventListener("click", clearResults);
-clearResults();
+async function extractImagePrompts(blogTitle) {
+  return sendMessageToContentScript({ action: "extractPrompts", blogTitle });
+}
 
-generateScheduleButton.addEventListener("click", () => {
-  generateSchedulePlan();
-});
+async function extractCleanBlog(blogTitle) {
+  return sendMessageToContentScript({ action: "extractCleanBlog", blogTitle });
+}
 
-copyScheduleButton.addEventListener("click", () => {
-  const text = schedulePreview.textContent || "";
+function formatPromptPreview(prompts) {
+  if (!prompts || prompts.length === 0) {
+    return "No prompts extracted yet.";
+  }
+  return prompts
+    .map((entry, index) => `Section Image Prompt ${index + 1}:\n${entry.prompt}`)
+    .join("\n\n");
+}
+
+function buildScheduleText(prompts, startTime, gap, endTime) {
+  const lines = [];
+  let current = startTime;
+  let scheduledCount = 0;
+
+  for (let i = 0; i < prompts.length; i += 1) {
+    if (endTime !== null && current > endTime) {
+      break;
+    }
+    scheduledCount += 1;
+    const taskIndex = i + 1;
+    const timeLabel = formatMinutesTo12Hour(current);
+    const promptText = prompts[i].prompt;
+
+    lines.push(`Scheduled Task ${taskIndex}:`);
+    lines.push(`Time: ${timeLabel}`);
+    lines.push("Instruction:");
+    if (taskIndex === 1) {
+      lines.push("Generate Image 1 only using the prompt below. Generate one image only, then stop.");
+    } else {
+      lines.push(
+        `Generate Image ${taskIndex} only using the prompt below. Keep the same premium Medium blog style, but make it visually different from Image 1. Generate one image only, then stop.`
+      );
+    }
+    lines.push("");
+    lines.push("Prompt:");
+    lines.push(promptText);
+    lines.push("");
+    current += gap;
+  }
+
+  return { scheduleText: lines.join("\n"), scheduledCount };
+}
+
+async function handleExtractPrompts() {
+  const blogTitle = getSelectedTitle(extractBlogTitleInput, extractBlogDropdown);
+  setStatus(extractStatus, "Extracting prompts...");
+  extractPreview.textContent = "";
+  extractTotalPrompts.textContent = "Total prompts: 0";
+
+  try {
+    const response = await extractImagePrompts(blogTitle);
+    if (!response) {
+      throw new Error("No response from the content script.");
+    }
+    if (blogTitle && !response.foundTitle) {
+      setStatus(extractStatus, "Blog title not found in the conversation.", true);
+      extractPreview.textContent = "No prompts extracted.";
+      return;
+    }
+    const prompts = removeDuplicatePrompts(response.prompts || []);
+    extractPreview.textContent = formatPromptPreview(prompts);
+    extractTotalPrompts.textContent = `Total prompts: ${prompts.length}`;
+    setStatus(extractStatus, prompts.length ? `Found ${prompts.length} prompt${prompts.length === 1 ? "" : "s"}.` : "No section image prompts found.", prompts.length === 0);
+    extractPreview.dataset.promptCount = prompts.length;
+    extractPreview.prompts = prompts;
+  } catch (error) {
+    setStatus(extractStatus, error.message || "Unable to extract prompts.", true);
+    extractPreview.textContent = "No prompts extracted.";
+  }
+}
+
+async function handleGenerateSchedule() {
+  const blogTitle = getSelectedTitle(scheduleBlogTitleInput, scheduleBlogDropdown);
+  const startTime = parseTimeToMinutes(scheduleStartTimeInput.value);
+  const endTime = parseTimeToMinutes(scheduleEndTimeInput.value);
+  const gap = parseInt(scheduleGapMinutesInput.value, 10);
+
+  if (!blogTitle) {
+    setStatus(scheduleStatus, "Please enter or select a blog title.", true);
+    return;
+  }
+  if (startTime === null) {
+    setStatus(scheduleStatus, "Please provide a valid start time.", true);
+    return;
+  }
+  if (!gap || gap < 1) {
+    setStatus(scheduleStatus, "Please provide a valid gap in minutes.", true);
+    return;
+  }
+
+  setStatus(scheduleStatus, "Generating schedule...");
+  schedulePreview.textContent = "";
+  scheduleTotalTasks.textContent = "Total scheduled tasks: 0";
+
+  try {
+    const response = await extractImagePrompts(blogTitle);
+    if (!response) {
+      throw new Error("No response from the content script.");
+    }
+    if (!response.foundTitle) {
+      setStatus(scheduleStatus, "Blog title not found in the conversation.", true);
+      return;
+    }
+    const prompts = removeDuplicatePrompts(response.prompts || []);
+    if (prompts.length === 0) {
+      setStatus(scheduleStatus, "No section image prompts found for this blog.", true);
+      return;
+    }
+
+    const { scheduleText, scheduledCount } = buildScheduleText(prompts, startTime, gap, endTime);
+    if (!scheduleText) {
+      setStatus(scheduleStatus, "Your selected time range is not enough for all prompts. Increase the end time or reduce the gap.", true);
+    } else {
+      schedulePreview.textContent = scheduleText;
+      scheduleTotalTasks.textContent = `Total scheduled tasks: ${scheduledCount}`;
+      if (scheduledCount < prompts.length) {
+        setStatus(scheduleStatus, "Partial schedule generated; the time range is not enough.", true);
+      } else {
+        setStatus(scheduleStatus, "Schedule generated.");
+      }
+    }
+  } catch (error) {
+    setStatus(scheduleStatus, error.message || "Unable to generate schedule.", true);
+  }
+}
+
+async function handleExtractCleanBlog() {
+  const blogTitle = getSelectedTitle(cleanBlogTitleInput, cleanBlogDropdown);
+  setStatus(cleanStatus, "Extracting clean blog...");
+  cleanPreview.textContent = "";
+
+  try {
+    const response = await extractCleanBlog(blogTitle);
+    if (!response) {
+      throw new Error("No response from the content script.");
+    }
+    if (!response.foundTitle && blogTitle) {
+      setStatus(cleanStatus, "Blog title not found in the conversation.", true);
+      cleanPreview.textContent = "No clean blog extracted.";
+      return;
+    }
+    if (!response.text) {
+      setStatus(cleanStatus, "No clean blog content found.", true);
+      cleanPreview.textContent = "No clean blog extracted.";
+      return;
+    }
+    cleanPreview.textContent = response.text;
+    setStatus(cleanStatus, "Clean blog extracted.");
+  } catch (error) {
+    setStatus(cleanStatus, error.message || "Unable to extract clean blog.", true);
+    cleanPreview.textContent = "No clean blog extracted.";
+  }
+}
+
+function handleCopyExtractedPrompts() {
+  const prompts = extractPreview.prompts || [];
+  if (!prompts.length) {
+    setStatus(extractStatus, "No prompts to copy.", true);
+    return;
+  }
+  copyToClipboard(formatPromptPreview(prompts), extractStatus);
+}
+
+function handleCopySchedulePlan() {
+  const text = schedulePreview.textContent.trim();
   if (!text) {
-    setStatus("No schedule to copy.", true);
+    setStatus(scheduleStatus, "No schedule to copy.", true);
     return;
   }
-  copyToClipboard(text);
-});
+  copyToClipboard(text, scheduleStatus);
+}
 
-exportScheduleTxtButton.addEventListener("click", () => {
-  const text = schedulePreview.textContent || "";
+function handleCopyCleanBlog() {
+  const text = cleanPreview.textContent.trim();
   if (!text) {
-    setStatus("No schedule to export.", true);
+    setStatus(cleanStatus, "No blog content to copy.", true);
     return;
   }
-  downloadFile("schedule-plan.txt", text, "text/plain;charset=utf-8");
-});
+  copyToClipboard(text, cleanStatus);
+}
 
-clearScheduleButton.addEventListener("click", () => {
-  schedulePreview.textContent = "No schedule generated yet.";
-  scheduleCount.textContent = "Total scheduled tasks: 0";
-  scheduleStatus.textContent = "";
-});
+function loadSettings() {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (!stored) {
+    settingsDefaultGap.value = 3;
+    settingsExportFormat.value = "txt";
+    settingsAutoDetect.checked = false;
+    return;
+  }
+  try {
+    const settings = JSON.parse(stored);
+    settingsDefaultGap.value = settings.defaultGapMinutes || 3;
+    settingsExportFormat.value = settings.defaultExportFormat || "txt";
+    settingsAutoDetect.checked = !!settings.autoDetectTitles;
+    scheduleGapMinutesInput.value = settings.defaultGapMinutes || 3;
+  } catch {
+    settingsDefaultGap.value = 3;
+    settingsExportFormat.value = "txt";
+    settingsAutoDetect.checked = false;
+  }
+}
+
+function saveSettings() {
+  const settings = {
+    defaultGapMinutes: parseInt(settingsDefaultGap.value, 10) || 3,
+    defaultExportFormat: settingsExportFormat.value || "txt",
+    autoDetectTitles: settingsAutoDetect.checked
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
+  scheduleGapMinutesInput.value = settings.defaultGapMinutes;
+  setStatus(settingsStatus, "Settings saved.");
+}
+
+function autoDetectOnLoad() {
+  if (!settingsAutoDetect.checked) return;
+  const activeTab = tabPanels.find((panel) => panel.classList.contains("active"));
+  if (!activeTab) return;
+  const tabId = activeTab.id;
+  if (tabId === "extractTab") {
+    detectBlogTitles(extractBlogDropdown, extractStatus);
+  } else if (tabId === "scheduleTab") {
+    detectBlogTitles(scheduleBlogDropdown, scheduleStatus);
+  } else if (tabId === "cleanTab") {
+    detectBlogTitles(cleanBlogDropdown, cleanStatus);
+  }
+}
+
+function setupEventHandlers() {
+  tabButtons.forEach((button) => {
+    button.addEventListener("click", () => activateTab(button.dataset.tab));
+  });
+
+  extractDetectTitlesButton.addEventListener("click", () => {
+    detectBlogTitles(extractBlogDropdown, extractStatus);
+  });
+
+  extractBlogDropdown.addEventListener("change", () => {
+    extractBlogTitleInput.value = extractBlogDropdown.value;
+  });
+
+  extractPromptsBtn.addEventListener("click", handleExtractPrompts);
+  copyExtractedPromptsButton.addEventListener("click", handleCopyExtractedPrompts);
+  exportExtractTxtButton.addEventListener("click", () => {
+    const prompts = extractPreview.prompts || [];
+    if (!prompts.length) {
+      setStatus(extractStatus, "No prompts to export.", true);
+      return;
+    }
+    downloadFile("section-image-prompts.txt", formatPromptPreview(prompts), "text/plain;charset=utf-8");
+  });
+  exportExtractJsonButton.addEventListener("click", () => {
+    const prompts = extractPreview.prompts || [];
+    if (!prompts.length) {
+      setStatus(extractStatus, "No prompts to export.", true);
+      return;
+    }
+    downloadFile(
+      "section-image-prompts.json",
+      JSON.stringify({ prompts: prompts.map((entry, index) => ({ sectionNumber: index + 1, prompt: entry.prompt })) }, null, 2),
+      "application/json;charset=utf-8"
+    );
+  });
+  exportExtractCsvButton.addEventListener("click", () => {
+    const prompts = extractPreview.prompts || [];
+    if (!prompts.length) {
+      setStatus(extractStatus, "No prompts to export.", true);
+      return;
+    }
+    const lines = ["Section Number,Prompt"];
+    prompts.forEach((entry, index) => {
+      const prompt = `"${entry.prompt.replace(/"/g, '""')}"`;
+      lines.push(`${index + 1},${prompt}`);
+    });
+    downloadFile("section-image-prompts.csv", lines.join("\n"), "text/csv;charset=utf-8");
+  });
+
+  scheduleDetectTitlesButton.addEventListener("click", () => {
+    detectBlogTitles(scheduleBlogDropdown, scheduleStatus);
+  });
+
+  scheduleBlogDropdown.addEventListener("change", () => {
+    scheduleBlogTitleInput.value = scheduleBlogDropdown.value;
+  });
+
+  generateScheduleBtn.addEventListener("click", handleGenerateSchedule);
+  copySchedulePlanButton.addEventListener("click", handleCopySchedulePlan);
+  exportScheduleTxtButton.addEventListener("click", () => {
+    const text = schedulePreview.textContent.trim();
+    if (!text) {
+      setStatus(scheduleStatus, "No schedule to export.", true);
+      return;
+    }
+    downloadFile("schedule-plan.txt", text, "text/plain;charset=utf-8");
+  });
+
+  cleanDetectTitlesButton.addEventListener("click", () => {
+    detectBlogTitles(cleanBlogDropdown, cleanStatus);
+  });
+
+  cleanBlogDropdown.addEventListener("change", () => {
+    cleanBlogTitleInput.value = cleanBlogDropdown.value;
+  });
+
+  extractCleanBlogBtn.addEventListener("click", handleExtractCleanBlog);
+  copyCleanBlogButton.addEventListener("click", handleCopyCleanBlog);
+  exportCleanTxtButton.addEventListener("click", () => {
+    const text = cleanPreview.textContent.trim();
+    if (!text) {
+      setStatus(cleanStatus, "No blog content to export.", true);
+      return;
+    }
+    downloadFile("clean-blog.txt", text, "text/plain;charset=utf-8");
+  });
+  exportCleanMdButton.addEventListener("click", () => {
+    const text = cleanPreview.textContent.trim();
+    if (!text) {
+      setStatus(cleanStatus, "No blog content to export.", true);
+      return;
+    }
+    downloadFile("clean-blog.md", text, "text/markdown;charset=utf-8");
+  });
+
+  saveSettingsButton.addEventListener("click", saveSettings);
+}
+
+function init() {
+  setupEventHandlers();
+  loadSettings();
+  autoDetectOnLoad();
+}
+
+init();
